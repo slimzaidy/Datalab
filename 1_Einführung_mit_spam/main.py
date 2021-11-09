@@ -1,3 +1,8 @@
+#########################################################################################
+# Resources
+
+# https://www.sec.tu-bs.de/teaching/ws21/datalab/videos/datalab-01-spam-2.mp4
+
 # Improting all necessary libraries
 
 import pandas as pd
@@ -26,10 +31,12 @@ from sklearn.base import TransformerMixin, BaseEstimator
 from keras.models import Sequential, save_model, load_model
 from keras.callbacks import ModelCheckpoint, EarlyStopping
 
+#########################################################################################
 # Define the variables 
 emails = []
 labels = []
 
+#########################################################################################
 # Data preprocessing 
 z = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-train.zip")
 names = z.namelist()
@@ -48,6 +55,7 @@ for name in names:
 
 #print(len(labels))
 
+#########################################################################################
 # Feature engineering, try also: 1. n-gram | 2. bag of words
 
 X = np.zeros((16662, 3))
@@ -60,6 +68,7 @@ for i, email in enumerate(emails):
 
 Y = np.array(labels)
 
+#########################################################################################
 # Prepeare the data and build the model
 
 X_train, X_test, y_train, y_test = train_test_split(
@@ -79,6 +88,7 @@ print("balanced accuracy score = {}".format(balanced_accuracy_score(y_test, yhat
 
 z.close()
 
+###################################>>>>>$$$$$$$$$$$$$$$$<<<<<#############################
 # open the other test data zip file, preproces and perform predictions on it
 
 emails = []
@@ -103,7 +113,7 @@ for i, email in enumerate(emails):
 
 yhat = model.predict(X_test)
 
-
+#########################################################################################
 # Save the predictions with the names of the emails in a new file
 f = open("spam1-test.pred", "w")
 for name, pred in zip(names, yhat):
