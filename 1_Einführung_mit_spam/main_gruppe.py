@@ -163,22 +163,25 @@ print(X_few_vectors)
 
 
 
-##############################################################################################################
-# Build a pipeline
+#############################################################################################################
+# Build the model and perform the prediction
+
+
 from sklearn.pipeline import Pipeline
+
+log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
 
 preprocess_pipeline = Pipeline([
     ("email_to_wordcount", EmailToWordCounterTransformer()),
     ("wordcount_to_vector", WordCounterToVectorTransformer()),
+    #('classifier', model)
 ])
 
 X_train_transformed = preprocess_pipeline.fit_transform(X_train)
+X_test_transformed = preprocess_pipeline.transform(X_test)
 
-#############################################################################################################
-# Build the model and perform the prediction
-log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
 log_clf.fit(X_train_transformed, y_train)
-yhat = log_clf.predict(X_train_transformed)
+yhat = log_clf.predict(X_test_transformed)
 print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balanced_accuracy_score(y_test, yhat)))
 
 
@@ -195,10 +198,10 @@ for name in names_testset:
     email = z.read(name)
     emails_testset.append(email)
 
-X_test_transformed = preprocess_pipeline.transform(emails_testset)
+X_test_transformed_testset = preprocess_pipeline.transform(emails_testset)
 
 
-y_pred = log_clf.predict(X_test_transformed)
+y_pred = log_clf.predict(X_test_transformed_testset)
 
 
 #############################################################################################################
