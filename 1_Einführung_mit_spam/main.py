@@ -47,7 +47,7 @@ for name in names:
     email = z.read(name)
     emails.append(email)
 
-#print(emails[0])
+print(len(emails))
 
 for name in names:
     tokens = name.split(".")
@@ -64,7 +64,7 @@ X = np.zeros((16662, 3))
 for i, email in enumerate(emails): 
     X[i, 0] = len(email)            # mean length: 1476.67 | max len = 28445 | min len = 132
     X[i, 1] = len(email.split())    # mean length: 300.24 | max len = 6132 |
-    X[i, 2] = 'click' in str(email)
+    X[i, 2] = 'credit card' in str(email) # 'click'
 
 Y = np.array(labels)
 
