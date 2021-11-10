@@ -91,34 +91,34 @@ z.close()
 ###################################>>>>>$$$$$$$$$$$$$$$$<<<<<#############################
 # open the other test data zip file, preproces and perform predictions on it
 
-emails = []
-labels = []
-z = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-test.zip")
-names = z.namelist()
+emails_testset = []
+labels_testset = []
+z_testset = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-test.zip")
+names_testset = z.namelist()
 
-for name in names:
+for name in names_testset:
     email = z.read(name)
-    emails.append(email)
+    emails_testset.append(email)
 
-#print(len(emails))
+#print(len(emails_testset))
 
-X = np.zeros((15051, 3))
+X_testset = np.zeros((15051, 3))
 #print(X.shape)
 
-for i, email in enumerate(emails): 
-    X[i, 0] = len(email)            
-    X[i, 1] = len(email.split())    
-    X[i, 2] = 'click' in str(email)
+for i, email in enumerate(emails_testset): 
+    X_testset[i, 0] = len(email)            
+    X_testset[i, 1] = len(email.split())    
+    X_testset[i, 2] = 'click' in str(email)
 
 
-yhat = model.predict(X_test)
+yhat_testset = model.predict(X_testset)
 
 #########################################################################################
-# Save the predictions with the names of the emails in a new file
+# Save the predictions with the names of the emails_testset in a new file
 f = open("spam1-test.pred", "w")
-for name, pred in zip(names, yhat):
+for name, pred in zip(names_testset, yhat_testset):
     #print("%s;%d" % (name, pred))
     f.write("%s;%d" % (name, pred))
 
 f.close()
-z.close()
+z_testset.close()

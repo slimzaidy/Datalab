@@ -14,8 +14,8 @@ import os, shutil
 from datetime import datetime
 from pickle import load, dump
 import zipfile
-
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import RobustScaler
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.pipeline import Pipeline
 
@@ -56,7 +56,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     test_size=0.1,
     shuffle=True
 )
-
+print(len(X_train), len(X_test), len(y_train), len(y_test))
 ############################################################################################################
 # Perform stemming
 try:
@@ -90,7 +90,9 @@ from collections import Counter
 
 class EmailToWordCounterTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, strip_headers=True, lower_case=True, remove_punctuation=True,
-                 replace_urls=True, replace_numbers=True, stemming=True):
+                replace_urls=True, replace_numbers=True, stemming=True):
+                ##(self, strip_headers=False, lower_case=False, remove_punctuation=False, 
+                 #replace_urls=False, replace_numbers=False, stemming=False):
         self.strip_headers = strip_headers
         self.lower_case = lower_case
         self.remove_punctuation = remove_punctuation
@@ -101,7 +103,7 @@ class EmailToWordCounterTransformer(BaseEstimator, TransformerMixin):
         return self
     def transform(self, X, y=None):
         X_transformed = []
-        for email in emails:
+        for email in X:
             text = str(email) or ""
             if self.lower_case:
                 text = text.lower()
@@ -124,8 +126,8 @@ class EmailToWordCounterTransformer(BaseEstimator, TransformerMixin):
             X_transformed.append(word_counts)
         return np.array(X_transformed)
 
-X_few = X_train[:3]
-X_few_wordcounts = EmailToWordCounterTransformer().fit_transform(X_few)
+#X_few = X_train[:3]
+#X_few_wordcounts = EmailToWordCounterTransformer().fit_transform(X_few)
 #print(X_few_wordcounts)
 
 
@@ -135,7 +137,7 @@ X_few_wordcounts = EmailToWordCounterTransformer().fit_transform(X_few)
 from scipy.sparse import csr_matrix
 
 class WordCounterToVectorTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, vocabulary_size=1000):
+    def __init__(self, vocabulary_size=1000): # vocabulary_size=1000)
         self.vocabulary_size = vocabulary_size
     def fit(self, X, y=None):
         total_count = Counter()
@@ -157,9 +159,9 @@ class WordCounterToVectorTransformer(BaseEstimator, TransformerMixin):
         return csr_matrix((data, (rows, cols)), shape=(len(X), self.vocabulary_size + 1))
 
         
-vocab_transformer = WordCounterToVectorTransformer(vocabulary_size=10)
-X_few_vectors = vocab_transformer.fit_transform(X_few_wordcounts)
-print(X_few_vectors)
+#vocab_transformer = WordCounterToVectorTransformer(vocabulary_size=10)
+#X_few_vectors = vocab_transformer.fit_transform(X_few_wordcounts)
+#print(X_few_vectors)
 
 
 
@@ -169,17 +171,21 @@ print(X_few_vectors)
 
 from sklearn.pipeline import Pipeline
 
-log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42)
 
 preprocess_pipeline = Pipeline([
     ("email_to_wordcount", EmailToWordCounterTransformer()),
     ("wordcount_to_vector", WordCounterToVectorTransformer()),
+    #("robscaler", RobustScaler()),
     #('classifier', model)
 ])
 
 X_train_transformed = preprocess_pipeline.fit_transform(X_train)
+
 X_test_transformed = preprocess_pipeline.transform(X_test)
 
+log_clf = LogisticRegression(solver="lbfgs", max_iter=50, random_state=42) #max_iter=1000
+print(X_train_transformed.shape)
+print(y_train.shape)
 log_clf.fit(X_train_transformed, y_train)
 yhat = log_clf.predict(X_test_transformed)
 print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balanced_accuracy_score(y_test, yhat)))
@@ -192,10 +198,10 @@ z.close()
 emails_testset = []
 labels_testset = []
 z_testset = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-test.zip")
-names_testset = z.namelist()
+names_testset = z_testset.namelist()
 
 for name in names_testset:
-    email = z.read(name)
+    email = z_testset.read(name)
     emails_testset.append(email)
 
 X_test_transformed_testset = preprocess_pipeline.transform(emails_testset)
