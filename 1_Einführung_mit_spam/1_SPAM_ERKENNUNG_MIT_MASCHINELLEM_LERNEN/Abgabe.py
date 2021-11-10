@@ -4,7 +4,7 @@
 # Gruppe: Hex Haxors
 # Zaid Askari & Oussema Ben Taarit
 #########################################################################################
-# Improting all necessary libraries
+# Improting the initial necessary libraries
 
 import numpy as np
 import zipfile
@@ -160,7 +160,7 @@ print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balan
 
 
 z.close()
-###########################################       ################        #################################################################
+###########################################***********################***********##########################
 # Predict on the test set
 
 emails_testset = []
@@ -173,8 +173,6 @@ for name in names_testset:
     emails_testset.append(email)
 
 X_test_transformed_testset = preprocess_pipeline.transform(emails_testset)
-
-
 y_pred = log_clf.predict(X_test_transformed_testset)
 
 #############################################################################################################
@@ -185,7 +183,6 @@ f_csv = open("output.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
 for name, pred in zip(names_testset, y_pred):
-    print("%s;%d" % (name, pred))
     x = name + ";" + str(pred)
     writer.writerow([x])
 

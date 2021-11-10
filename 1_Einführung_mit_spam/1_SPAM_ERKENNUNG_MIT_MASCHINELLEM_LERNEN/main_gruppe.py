@@ -215,7 +215,6 @@ f_csv = open("output.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
 for name, pred in zip(names_testset, y_pred):
-    print("%s;%d" % (name, pred))
     x = name + ";" + str(pred)
     writer.writerow([x])
 
