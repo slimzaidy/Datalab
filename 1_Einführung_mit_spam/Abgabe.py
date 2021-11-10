@@ -1,12 +1,6 @@
 #########################################################################################
-# Resources
-
-# https://www.sec.tu-bs.de/teaching/ws21/datalab/videos/datalab-01-spam-2.mp4
-# https://github.com/ageron/handson-ml2/blob/master/03_classification.ipynb
-
-
-#########################################################################################
-#
+# Datalab
+# SPAM-ERKENNUNG MIT MASCHINELLEM LERNEN
 # Gruppe: Hex Haxors
 # Zaid Askari & Oussema Ben Taarit
 #########################################################################################
@@ -14,8 +8,6 @@
 
 import numpy as np
 import zipfile
-import csv
-
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -50,21 +42,17 @@ for name in names:
 Y = np.array(labels)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    emails[0:16662], #[0:16662]
-    Y[0:16662], #[0:16662]
+    emails[0:16662], 
+    Y[0:16662], 
     test_size=0.1,
     shuffle=True
 )
-#print(len(X_train), len(X_test), len(y_train), len(y_test))
-
-######################################
+print(len(X_train), len(X_test), len(y_train), len(y_test))
+############################################################################################################
 # Perform stemming
 try:
     import nltk
-
     stemmer = nltk.PorterStemmer()
-    for word in ("Computations", "Computation", "Computing", "Computed", "Compute", "Compulsive"):
-        print(word, "=>", stemmer.stem(word))
 except ImportError:
     print("Error: stemming requires the NLTK module.")
     stemmer = None
@@ -72,27 +60,22 @@ except ImportError:
 ##############################################################################################################
 # URL extract: replace URLs with the word "URL"
 try:
-    import urlextract # may require an Internet connection to download root domain names
-    
+    import urlextract 
     url_extractor = urlextract.URLExtract()
-    print(url_extractor.find_urls("Will it detect github.com and https://youtu.be/7Pq-S557XQU?t=3m32s"))
 except ImportError:
     print("Error: replacing URLs requires the urlextract module.")
     url_extractor = None
 
-
 ##############################################################################################################
-# put all this together into a transformer that we will use to convert emails to word counters
+# We add create a transformer that we will use to convert emails to word counters and we use it later in the pipeline
 
 from sklearn.base import BaseEstimator, TransformerMixin
 import re
 from collections import Counter
 
-class EmailToWordCounterTransformer(BaseEstimator, TransformerMixin):
+class EmailToWordCounterTrafo(BaseEstimator, TransformerMixin):
     def __init__(self, strip_headers=True, lower_case=True, remove_punctuation=True,
                 replace_urls=True, replace_numbers=True, stemming=True):
-                ##(self, strip_headers=False, lower_case=False, remove_punctuation=False, 
-                 #replace_urls=False, replace_numbers=False, stemming=False):
         self.strip_headers = strip_headers
         self.lower_case = lower_case
         self.remove_punctuation = remove_punctuation
@@ -126,18 +109,13 @@ class EmailToWordCounterTransformer(BaseEstimator, TransformerMixin):
             X_transformed.append(word_counts)
         return np.array(X_transformed)
 
-#X_few = X_train[:3]
-#X_few_wordcounts = EmailToWordCounterTransformer().fit_transform(X_few)
-#print(X_few_wordcounts)
-
-
 ##############################################################################################################
-# Convert word counts to vectors
+# Convert word counts to vectors and we use it later in the pipeline
 
 from scipy.sparse import csr_matrix
 
-class WordCounterToVectorTransformer(BaseEstimator, TransformerMixin):
-    def __init__(self, vocabulary_size=1000): # vocabulary_size=1000)
+class WordCounterToVectorTrafo(BaseEstimator, TransformerMixin):
+    def __init__(self, vocabulary_size=1000): 
         self.vocabulary_size = vocabulary_size
     def fit(self, X, y=None):
         total_count = Counter()
@@ -158,23 +136,15 @@ class WordCounterToVectorTransformer(BaseEstimator, TransformerMixin):
                 data.append(count)
         return csr_matrix((data, (rows, cols)), shape=(len(X), self.vocabulary_size + 1))
 
-        
-#vocab_transformer = WordCounterToVectorTransformer(vocabulary_size=10)
-#X_few_vectors = vocab_transformer.fit_transform(X_few_wordcounts)
-#print(X_few_vectors)
-
-
 
 #############################################################################################################
 # Build the model and perform the prediction
 
-
 from sklearn.pipeline import Pipeline
 
-
 preprocess_pipeline = Pipeline([
-    ("email_to_wordcount", EmailToWordCounterTransformer()),
-    ("wordcount_to_vector", WordCounterToVectorTransformer()),
+    ("email_to_wordcount", EmailToWordCounterTrafo()),
+    ("wordcount_to_vector", WordCounterToVectorTrafo()),
 ])
 
 X_train_transformed = preprocess_pipeline.fit_transform(X_train)
@@ -188,8 +158,8 @@ log_clf.fit(X_train_transformed, y_train)
 yhat = log_clf.predict(X_test_transformed)
 print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balanced_accuracy_score(y_test, yhat)))
 
-z.close()
 
+z.close()
 ###########################################       ################        #################################################################
 # Predict on the test set
 
@@ -198,11 +168,10 @@ labels_testset = []
 z_testset = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-test.zip")
 names_testset = z_testset.namelist()
 
-
 for name in names_testset:
     email = z_testset.read(name)
     emails_testset.append(email)
-#emails_testset = emails_testset[:100]
+
 X_test_transformed_testset = preprocess_pipeline.transform(emails_testset)
 
 
@@ -210,6 +179,7 @@ y_pred = log_clf.predict(X_test_transformed_testset)
 
 #############################################################################################################
 # Save the predictions with the names of the emails_testset in a new file
+import csv
 
 f_csv = open("output.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
@@ -221,11 +191,3 @@ for name, pred in zip(names_testset, y_pred):
 
 f_csv.close()
 z_testset.close()
-
-
-# f = open("spam1-test.pred", "w")
-# for name, pred in zip(names_testset, y_pred):
-#     f.write("%s;%d" % (name, pred))
-
-# f.close()
-# z_testset.close()
