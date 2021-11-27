@@ -30,18 +30,26 @@ X = []
 # Data preprocessing 
 
 
-#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aaduuijtoewjqttc.0") 
-myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip") 
+myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aaduuijtoewjqttc.0") 
+#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip") 
 
 
 names = myzip.namelist()
-names = names[40:50]
-for filename in names:
-        X.append('\n'.join([line.decode('latin-1').lower() for line in myzip.read(filename).splitlines()]))
-        labels.append(int(filename[-1]))
-        X = ['\n'.join (filter(lambda line: len(line) > 0, mail.splitlines())) for mail in X]
+#names = names[-1]
 
-print(X[0])
+for filename in names:
+    if filename == 'word/document.xml':
+        #X.append('\n'.join([line.decode('latin-1').lower() for line in myzip.read(filename).splitlines()]))
+        #labels.append(int(filename[-1]))
+        #X = ['\n'.join (filter(lambda line: len(line) > 0, mail.splitlines())) for mail in X]
+        # Read each line in the file, readlines() returns a list of lines
+        content = filename.readlines()
+        # Combine the lines in the list into a string
+        content = "".join(content)
+        #bs_content = bs(content, "lxml")
+        print(X)
+
+#print(X)
 
 # # file_to_test = names['word/document.xml']
 # Index_Number_For_doc_xml = names.index('word/document.xml')
@@ -51,9 +59,12 @@ print(X[0])
 # content = xml_doc.read()
 
 
-soup = BeautifulSoup(X[0], 'lxml')
-
+soup = BeautifulSoup(X, 'lxml')
 print(soup.prettify())
+
+# wow = soup.find_all('w:p')
+#print(wow)
+#print(soup.prettify())
 # print(soup.get_text())
 
 myzip.close()
