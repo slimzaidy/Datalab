@@ -19,6 +19,7 @@ from sklearn.base import TransformerMixin, BaseEstimator
 from bs4 import BeautifulSoup
 import seedir as sd
 from io import BytesIO
+import os
 #########################################################################################
 # Define the variables 
 doc_text = []
@@ -28,7 +29,8 @@ labels = []
 
 
 # #myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aabhxehabdfcfopa.0")
-# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/acuinrpjavavgvog.1")
+# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/test/data/docx-2017-09/hjxzjigfrcpqkmwc.x") 
+# #f = open("2_Schadcode in Dokumenten/test/data/docx-2017-09/hjxzjigfrcpqkmwc.x", "r")
 
 # names = myzip.namelist()
 
@@ -46,16 +48,18 @@ labels = []
 
 # myzip.close()
 
+
+#########################################################################################
 # Extract the text from each document
 
 train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
 names_big_files = train_zip.namelist()
 # removing the labels file
 names_big_files = names_big_files[:-1] 
-#names_big_files = names_big_files[:3]
+names_big_files = names_big_files[:20]
 
 for name in names_big_files:
-    
+    print(name)
     tokens = name.split(".")
     labels.append(int(tokens[1]))
 

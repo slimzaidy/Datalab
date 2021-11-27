@@ -2,6 +2,7 @@
 *.zip
 *.pdf
 *.PNG
+*.csv
 *.0
 *.1
 **/test/
