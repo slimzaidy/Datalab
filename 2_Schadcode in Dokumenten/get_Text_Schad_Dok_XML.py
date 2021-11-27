@@ -29,7 +29,7 @@ labels = []
 
 
 # #myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aabhxehabdfcfopa.0")
-# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/test/data/docx-2017-09/hjxzjigfrcpqkmwc.x") 
+# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/test/data/docx-2017-09/aethstrbrsoqeugb.x") 
 # #f = open("2_Schadcode in Dokumenten/test/data/docx-2017-09/hjxzjigfrcpqkmwc.x", "r")
 
 # names = myzip.namelist()
@@ -56,7 +56,7 @@ train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
 names_big_files = train_zip.namelist()
 # removing the labels file
 names_big_files = names_big_files[:-1] 
-names_big_files = names_big_files[:20]
+names_big_files = names_big_files[:10]
 
 for name in names_big_files:
     print(name)
@@ -72,14 +72,15 @@ for name in names_big_files:
     content = xml_doc.read()
     soup = BeautifulSoup(content, 'lxml')
     text = soup.get_text()
-    doc_text.append(text)
+    #text = text.encode("utf8")
+    doc_text.append(text) #(str(text))
 
     labeled_files_zip.close()
 
 train_zip.close()
 
 print(labels[0])
-print(doc_text[0])
+#print(str(doc_text[0]))
 
 #########################################################################################
 # Save the text and labels with the names of the file to a csv
@@ -89,7 +90,7 @@ f_csv = open("doc_text.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
 for name_big_file, label, text in zip(names_big_files, labels, doc_text):
-    x = name_big_file + ";" + str(label) + ";" + text
+    x = name_big_file + ";" + str(label) + ";" + str(text.encode("utf8"))
     writer.writerow([x])
 
 f_csv.close()
