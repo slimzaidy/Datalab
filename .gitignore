@@ -2,3 +2,7 @@
 *.zip
 *.pdf
 *.PNG
+*.0
+*.1
+**/test/
+**/train/
