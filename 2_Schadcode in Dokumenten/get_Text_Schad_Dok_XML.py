@@ -24,15 +24,24 @@ import os
 # Define the variables 
 doc_text = []
 labels = []
+X = []
+
 #########################################################################################
 # Data preprocessing 
 
 
-# #myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aabhxehabdfcfopa.0")
-# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/test/data/docx-2017-09/aethstrbrsoqeugb.x") 
-# #f = open("2_Schadcode in Dokumenten/test/data/docx-2017-09/hjxzjigfrcpqkmwc.x", "r")
+#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aaduuijtoewjqttc.0") 
+myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip") 
 
-# names = myzip.namelist()
+
+names = myzip.namelist()
+names = names[40:50]
+for filename in names:
+        X.append('\n'.join([line.decode('latin-1').lower() for line in myzip.read(filename).splitlines()]))
+        labels.append(int(filename[-1]))
+        X = ['\n'.join (filter(lambda line: len(line) > 0, mail.splitlines())) for mail in X]
+
+print(X[0])
 
 # # file_to_test = names['word/document.xml']
 # Index_Number_For_doc_xml = names.index('word/document.xml')
@@ -42,55 +51,56 @@ labels = []
 # content = xml_doc.read()
 
 
-# soup = BeautifulSoup(content, 'lxml')
-# #print(soup.prettify())
+soup = BeautifulSoup(X[0], 'lxml')
+
+print(soup.prettify())
 # print(soup.get_text())
 
-# myzip.close()
+myzip.close()
 
 
-#########################################################################################
-# Extract the text from each document
+# #########################################################################################
+# # Extract the text from each document
 
-train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
-names_big_files = train_zip.namelist()
-# removing the labels file
-names_big_files = names_big_files[:-1] 
-names_big_files = names_big_files[:10]
+# train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
+# names_big_files = train_zip.namelist()
+# # removing the labels file
+# names_big_files = names_big_files[:-1] 
+# names_big_files = names_big_files[40:]
 
-for name in names_big_files:
-    print(name)
-    tokens = name.split(".")
-    labels.append(int(tokens[1]))
+# for name in names_big_files:
+#     print(name)
+#     tokens = name.split(".")
+#     labels.append(int(tokens[1]))
 
-    zfiledata = BytesIO(train_zip.read(name))
+#     zfiledata = BytesIO(train_zip.read(name))
     
-    labeled_files_zip = zipfile.ZipFile(zfiledata)
-    sub_names = labeled_files_zip.namelist()
-    Index_Number_For_doc_xml = sub_names.index('word/document.xml')
-    xml_doc = labeled_files_zip.open(sub_names[Index_Number_For_doc_xml])
-    content = xml_doc.read()
-    soup = BeautifulSoup(content, 'lxml')
-    text = soup.get_text()
-    #text = text.encode("utf8")
-    doc_text.append(text) #(str(text))
+#     labeled_files_zip = zipfile.ZipFile(zfiledata)
+#     sub_names = labeled_files_zip.namelist()
+#     Index_Number_For_doc_xml = sub_names.index('word/document.xml')
+#     xml_doc = labeled_files_zip.open(sub_names[Index_Number_For_doc_xml])
+#     content = xml_doc.read()
+#     soup = BeautifulSoup(content, 'lxml')
+#     text = soup.get_text()
+#     #text = text.encode("utf8")
+#     doc_text.append(text) #(str(text))
 
-    labeled_files_zip.close()
+#     labeled_files_zip.close()
 
-train_zip.close()
+# train_zip.close()
 
-print(labels[0])
-#print(str(doc_text[0]))
+# print(labels[0])
+# #print(str(doc_text[0]))
 
-#########################################################################################
-# Save the text and labels with the names of the file to a csv
-import csv
+# #########################################################################################
+# # Save the text and labels with the names of the file to a csv
+# import csv
 
-f_csv = open("doc_text.csv", "w+", newline ='')
-writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+# f_csv = open("doc_text.csv", "w+", newline ='')
+# writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
-for name_big_file, label, text in zip(names_big_files, labels, doc_text):
-    x = name_big_file + ";" + str(label) + ";" + str(text.encode("utf8"))
-    writer.writerow([x])
+# for name_big_file, label, text in zip(names_big_files, labels, doc_text):
+#     x = name_big_file + ";" + str(label) + ";" + str(text.encode("utf8")) #str(text.encode("utf8"))
+#     writer.writerow([x])
 
-f_csv.close()
+# f_csv.close()
