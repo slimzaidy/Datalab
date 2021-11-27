@@ -1,0 +1,16 @@
+
+Detection of Malicious PDF Files Based on Hierarchical Document Structure
+http://www.ra.cs.uni-tuebingen.de/mitarb/srndic/srndic-laskov-ndss-2013.pdf
+
+Malicious PDF detection using metadata and structural features
+https://dl.acm.org/doi/abs/10.1145/2420950.2420987
+
+PDF file format: Basic structure [updated 2020]
+https://resources.infosecinstitute.com/topic/pdf-file-format-basic-structure/
+
+
+Pdf-parser
+https://www.google.com/search?client=opera&q=pdf+parser&sourceid=opera&ie=UTF-8&oe=UTF-8
+
+Pdfminer.six is a python package for extracting information from PDF documents.
+https://pdfminersix.readthedocs.io/en/latest/
