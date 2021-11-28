@@ -53,7 +53,7 @@ labels = []
 
 # #########################################################################################
 # # Extract the text from each document
-max_number_of_data = 100
+max_number_of_data = 300
 train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
 names_docx_files = train_zip.namelist() # There are 6301 docx files after removing the labels file in train.zip
 # removing the labels file
@@ -190,7 +190,7 @@ class EmailToWordCounterTrafo(BaseEstimator, TransformerMixin):
 from scipy.sparse import csr_matrix
 
 class WordCounterToVectorTrafo(BaseEstimator, TransformerMixin):
-    def __init__(self, vocabulary_size=10): 
+    def __init__(self, vocabulary_size=1000): 
         self.vocabulary_size = vocabulary_size
     def fit(self, X, y=None):
         total_count = Counter()
@@ -253,20 +253,25 @@ for name in names_docx_files_test:
     is_zip_condition = zipfile.is_zipfile("2_Schadcode in Dokumenten/test_old/" + name)
     
     if is_zip_condition:
-        labeled_files_zip = zipfile.ZipFile(zfiledata)
-        sub_names = labeled_files_zip.namelist()
+        try:
+            labeled_files_zip = zipfile.ZipFile(zfiledata)
+            sub_names = labeled_files_zip.namelist()
 
-        for sub_name in sub_names:
-            if sub_name == 'word/document.xml':
-                with labeled_files_zip.open(sub_name, 'r') as f:
-                    soup = BeautifulSoup(f, 'lxml')
-                    #print(soup.prettify())
-                    for el in soup.find_all('w:p'): # Here we have many separate lines of type string, maybe add them all together into one string
-                        if (len(el.text) > 0):
-                            text_content= " ".join((text_content, el.text)) #text_content + ' ' + el.text
-                            
-        doc_text_testset.append(text_content)
-        labeled_files_zip.close()
+            for sub_name in sub_names:
+                if sub_name == 'word/document.xml':
+                    try: 
+                        with labeled_files_zip.open(sub_name, 'r') as f:
+                            soup = BeautifulSoup(f, 'lxml')
+                            #print(soup.prettify())
+                            for el in soup.find_all('w:p'): # Here we have many separate lines of type string, maybe add them all together into one string
+                                if (len(el.text) > 0):
+                                    text_content= " ".join((text_content, el.text)) #text_content + ' ' + el.text
+                    except Exception as e:
+                        text_content = "defect"              
+            doc_text_testset.append(text_content)
+            labeled_files_zip.close()
+        except Exception as e:
+            doc_text_testset.append("defect")
     else: 
         doc_text_testset.append("defect")
 
