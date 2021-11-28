@@ -11,30 +11,104 @@ import zipfile
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import balanced_accuracy_score
-
 from sklearn.base import TransformerMixin, BaseEstimator
 
+from bs4 import BeautifulSoup
+import seedir as sd
+from io import BytesIO
+import os
 #########################################################################################
 # Define the variables 
-emails = []
+doc_text = []
 labels = []
 
 #########################################################################################
 # Data preprocessing 
-z = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-train.zip")
-names = z.namelist()
-names = names[:-1]
-#print(len(names))
 
-for name in names:
-    email = z.read(name)
-    emails.append(email)
 
-for name in names:
+# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train_old/data/docx-2016-07/aaduuijtoewjqttc.0")
+#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train_old/data/docx-2017-01/uclvhtuckhtprhgn.1")  
+
+#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip") 
+
+#print(zipfile.is_zipfile("2_Schadcode in Dokumenten/train_old/data/docx-2016-07/aaduuijtoewjqttc.0"))
+# names = myzip.namelist()
+# #names = names[-1]
+
+# for filename in names:
+#     if filename == 'word/document.xml':
+
+#         with myzip.open(filename, 'r') as f:
+#             soup = BeautifulSoup(f, 'lxml')
+#             #print(soup.prettify())
+#             for el in soup.find_all('w:p'):
+#                 print(el.text)
+
+
+# myzip.close()
+
+
+# #########################################################################################
+# # Extract the text from each document
+max_number_of_data = 100
+train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
+names_docx_files = train_zip.namelist() # There are 6301 docx files after removing the labels file in train.zip
+# removing the labels file
+names_docx_files = names_docx_files[:-1]
+names_docx_files = names_docx_files[:max_number_of_data]  
+
+print(len(names_docx_files))
+for name in names_docx_files:
+    #print(name)
     tokens = name.split(".")
     labels.append(int(tokens[1]))
+
+    # The docx file
+    text_content = ''
+    zfiledata = BytesIO(train_zip.read(name))
+
+    is_zip_condition = zipfile.is_zipfile("2_Schadcode in Dokumenten/train_old/" + name)
+    
+    if is_zip_condition:
+        labeled_files_zip = zipfile.ZipFile(zfiledata)
+        sub_names = labeled_files_zip.namelist()
+
+        for sub_name in sub_names:
+            if sub_name == 'word/document.xml':
+                with labeled_files_zip.open(sub_name, 'r') as f:
+                    soup = BeautifulSoup(f, 'lxml')
+                    #print(soup.prettify())
+                    for el in soup.find_all('w:p'): # Here we have many separate lines of type string, maybe add them all together into one string
+                        if (len(el.text) > 0):
+                            text_content= " ".join((text_content, el.text)) #text_content + ' ' + el.text
+                            
+        doc_text.append(text_content)
+        labeled_files_zip.close()
+    else: 
+        #text_content= " ".join((text_content, "defect"))
+        doc_text.append("defect")
+
+train_zip.close()
+
+print(len(labels))
+print(len(doc_text))
+# #print(str(doc_text[0]))
+
+# #########################################################################################
+# # Save the text and labels with the names of the file to a csv
+# import csv
+
+# f_csv = open("doc_text.csv", "w+", newline ='', encoding="utf-8")
+# writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+
+# for name_big_file, label, text in zip(names_docx_files, labels, doc_text):
+#     x = name_big_file + ";" + str(label) + ";" +  text  
+#     writer.writerow([x])
+
+# f_csv.close()
 
 #########################################################################################
 # Prepeare the data and build the model
@@ -42,12 +116,13 @@ for name in names:
 Y = np.array(labels)
 
 X_train, X_test, y_train, y_test = train_test_split(
-    emails[0:16662], 
-    Y[0:16662], 
+    doc_text[0:max_number_of_data], 
+    labels[0:max_number_of_data], 
     test_size=0.1,
     shuffle=True
 )
 print(len(X_train), len(X_test), len(y_train), len(y_test))
+
 ############################################################################################################
 # Perform stemming
 try:
@@ -87,7 +162,7 @@ class EmailToWordCounterTrafo(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         X_transformed = []
         for email in X:
-            text = str(email) or ""
+            text = email or ""
             if self.lower_case:
                 text = text.lower()
             if self.replace_urls and url_extractor is not None:
@@ -115,7 +190,7 @@ class EmailToWordCounterTrafo(BaseEstimator, TransformerMixin):
 from scipy.sparse import csr_matrix
 
 class WordCounterToVectorTrafo(BaseEstimator, TransformerMixin):
-    def __init__(self, vocabulary_size=1000): 
+    def __init__(self, vocabulary_size=10): 
         self.vocabulary_size = vocabulary_size
     def fit(self, X, y=None):
         total_count = Counter()
@@ -136,7 +211,6 @@ class WordCounterToVectorTrafo(BaseEstimator, TransformerMixin):
                 data.append(count)
         return csr_matrix((data, (rows, cols)), shape=(len(X), self.vocabulary_size + 1))
 
-
 #############################################################################################################
 # Build the model and perform the prediction
 
@@ -152,27 +226,53 @@ X_train_transformed = preprocess_pipeline.fit_transform(X_train)
 X_test_transformed = preprocess_pipeline.transform(X_test)
 
 log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42) #max_iter=1000
-print(X_train_transformed.shape)
-print(y_train.shape)
+#print(X_train_transformed.shape)
+#print(y_train.shape)
 log_clf.fit(X_train_transformed, y_train)
 yhat = log_clf.predict(X_test_transformed)
 print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balanced_accuracy_score(y_test, yhat)))
 
-
-z.close()
 ###########################################***********################***********##########################
 # Predict on the test set
 
-emails_testset = []
-labels_testset = []
-z_testset = zipfile.ZipFile("1_Einführung_mit_spam/1_SPAM_ERKENNUNG_MIT_MASCHINELLEM_LERNEN/spam1-test.zip")
-names_testset = z_testset.namelist()
+doc_text_testset = []
 
-for name in names_testset:
-    email = z_testset.read(name)
-    emails_testset.append(email)
 
-X_test_transformed_testset = preprocess_pipeline.transform(emails_testset)
+test_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/test.zip")
+names_docx_files_test = test_zip.namelist() # There are 6301 docx files after removing the labels file in test.zip
+#names_docx_files_test = names_docx_files_test[:max_number_of_data]  
+
+print(len(names_docx_files_test))
+
+for name in names_docx_files_test:
+    #print(name)
+    # The docx file
+    text_content = ''
+    zfiledata = BytesIO(test_zip.read(name))
+
+    is_zip_condition = zipfile.is_zipfile("2_Schadcode in Dokumenten/test_old/" + name)
+    
+    if is_zip_condition:
+        labeled_files_zip = zipfile.ZipFile(zfiledata)
+        sub_names = labeled_files_zip.namelist()
+
+        for sub_name in sub_names:
+            if sub_name == 'word/document.xml':
+                with labeled_files_zip.open(sub_name, 'r') as f:
+                    soup = BeautifulSoup(f, 'lxml')
+                    #print(soup.prettify())
+                    for el in soup.find_all('w:p'): # Here we have many separate lines of type string, maybe add them all together into one string
+                        if (len(el.text) > 0):
+                            text_content= " ".join((text_content, el.text)) #text_content + ' ' + el.text
+                            
+        doc_text_testset.append(text_content)
+        labeled_files_zip.close()
+    else: 
+        doc_text_testset.append("defect")
+
+test_zip.close()
+
+X_test_transformed_testset = preprocess_pipeline.transform(doc_text_testset)
 y_pred = log_clf.predict(X_test_transformed_testset)
 
 #############################################################################################################
@@ -182,9 +282,8 @@ import csv
 f_csv = open("output.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
-for name, pred in zip(names_testset, y_pred):
+for name, pred in zip(names_docx_files_test, y_pred):
     x = name + ";" + str(pred)
     writer.writerow([x])
 
 f_csv.close()
-z_testset.close()
