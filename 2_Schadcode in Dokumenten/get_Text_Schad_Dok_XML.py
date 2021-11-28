@@ -24,94 +24,88 @@ import os
 # Define the variables 
 doc_text = []
 labels = []
-X = []
 
 #########################################################################################
 # Data preprocessing 
 
 
-myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train/data/docx-2016-07/aaduuijtoewjqttc.0") 
+# myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train_old/data/docx-2016-07/aaduuijtoewjqttc.0")
+#myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train_old/data/docx-2017-01/uclvhtuckhtprhgn.1")  
+
 #myzip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip") 
 
+#print(zipfile.is_zipfile("2_Schadcode in Dokumenten/train_old/data/docx-2016-07/aaduuijtoewjqttc.0"))
+# names = myzip.namelist()
+# #names = names[-1]
 
-names = myzip.namelist()
-#names = names[-1]
+# for filename in names:
+#     if filename == 'word/document.xml':
 
-for filename in names:
-    if filename == 'word/document.xml':
-        #X.append('\n'.join([line.decode('latin-1').lower() for line in myzip.read(filename).splitlines()]))
-        #labels.append(int(filename[-1]))
-        #X = ['\n'.join (filter(lambda line: len(line) > 0, mail.splitlines())) for mail in X]
-        # Read each line in the file, readlines() returns a list of lines
-        content = filename.readlines()
-        # Combine the lines in the list into a string
-        content = "".join(content)
-        #bs_content = bs(content, "lxml")
-        print(X)
-
-#print(X)
-
-# # file_to_test = names['word/document.xml']
-# Index_Number_For_doc_xml = names.index('word/document.xml')
-# print(Index_Number_For_doc_xml)    
-
-# xml_doc = myzip.open(names[Index_Number_For_doc_xml])
-# content = xml_doc.read()
+#         with myzip.open(filename, 'r') as f:
+#             soup = BeautifulSoup(f, 'lxml')
+#             #print(soup.prettify())
+#             for el in soup.find_all('w:p'):
+#                 print(el.text)
 
 
-soup = BeautifulSoup(X, 'lxml')
-print(soup.prettify())
-
-# wow = soup.find_all('w:p')
-#print(wow)
-#print(soup.prettify())
-# print(soup.get_text())
-
-myzip.close()
+# myzip.close()
 
 
 # #########################################################################################
 # # Extract the text from each document
 
-# train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
-# names_big_files = train_zip.namelist()
-# # removing the labels file
-# names_big_files = names_big_files[:-1] 
-# names_big_files = names_big_files[40:]
+train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
+names_big_files = train_zip.namelist() # There are 6301 docx files after removing the labels file in train.zip
+# removing the labels file
+names_big_files = names_big_files[:-1]
+names_big_files = names_big_files[:100]  
 
-# for name in names_big_files:
-#     print(name)
-#     tokens = name.split(".")
-#     labels.append(int(tokens[1]))
+print(len(names_big_files))
+for name in names_big_files:
+    print(name)
+    tokens = name.split(".")
+    labels.append(int(tokens[1]))
 
-#     zfiledata = BytesIO(train_zip.read(name))
+    # The docx file
+    text_content = ''
+    zfiledata = BytesIO(train_zip.read(name))
+
+    is_zip_condition = zipfile.is_zipfile("2_Schadcode in Dokumenten/train_old/" + name)
     
-#     labeled_files_zip = zipfile.ZipFile(zfiledata)
-#     sub_names = labeled_files_zip.namelist()
-#     Index_Number_For_doc_xml = sub_names.index('word/document.xml')
-#     xml_doc = labeled_files_zip.open(sub_names[Index_Number_For_doc_xml])
-#     content = xml_doc.read()
-#     soup = BeautifulSoup(content, 'lxml')
-#     text = soup.get_text()
-#     #text = text.encode("utf8")
-#     doc_text.append(text) #(str(text))
+    if is_zip_condition:
+        labeled_files_zip = zipfile.ZipFile(zfiledata)
+        sub_names = labeled_files_zip.namelist()
 
-#     labeled_files_zip.close()
+        for sub_name in sub_names:
+            if sub_name == 'word/document.xml':
+                with labeled_files_zip.open(sub_name, 'r') as f:
+                    soup = BeautifulSoup(f, 'lxml')
+                    #print(soup.prettify())
+                    for el in soup.find_all('w:p'): # Here we have many separate lines of type string, maybe add them all together into one string
+                        if (len(el.text) > 0):
+                            text_content= " ".join((text_content, el.text)) #text_content + ' ' + el.text
+                            
+        doc_text.append(text_content)
+        labeled_files_zip.close()
+    else: 
+        #text_content= " ".join((text_content, "defect"))
+        doc_text.append("defect")
 
-# train_zip.close()
+train_zip.close()
 
-# print(labels[0])
+print(len(labels))
+print(len(doc_text))
 # #print(str(doc_text[0]))
 
 # #########################################################################################
 # # Save the text and labels with the names of the file to a csv
-# import csv
+import csv
 
-# f_csv = open("doc_text.csv", "w+", newline ='')
-# writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+f_csv = open("doc_text.csv", "w+", newline ='', encoding="utf-8")
+writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
-# for name_big_file, label, text in zip(names_big_files, labels, doc_text):
-#     x = name_big_file + ";" + str(label) + ";" + str(text.encode("utf8")) #str(text.encode("utf8"))
-#     writer.writerow([x])
+for name_big_file, label, text in zip(names_big_files, labels, doc_text):
+    x = name_big_file + ";" + str(label) + ";" +  text  
+    writer.writerow([x])
 
-# f_csv.close()
+f_csv.close()
