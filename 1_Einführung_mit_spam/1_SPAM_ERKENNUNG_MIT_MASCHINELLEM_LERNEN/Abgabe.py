@@ -30,6 +30,8 @@ names = names[:-1]
 
 for name in names:
     email = z.read(name)
+    print(email)
+    print(type(email))
     emails.append(email)
 
 for name in names:
