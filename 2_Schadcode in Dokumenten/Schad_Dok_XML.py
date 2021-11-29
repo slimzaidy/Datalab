@@ -53,7 +53,7 @@ labels = []
 
 # #########################################################################################
 # # Extract the text from each document
-max_number_of_data = 300
+max_number_of_data = 3000
 train_zip = zipfile.ZipFile("2_Schadcode in Dokumenten/train.zip")
 names_docx_files = train_zip.namelist() # There are 6301 docx files after removing the labels file in train.zip
 # removing the labels file
@@ -225,11 +225,12 @@ X_train_transformed = preprocess_pipeline.fit_transform(X_train)
 
 X_test_transformed = preprocess_pipeline.transform(X_test)
 
-log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42) #max_iter=1000
+#log_clf = LogisticRegression(solver="lbfgs", max_iter=1000, random_state=42) #max_iter=1000
+model = RandomForestClassifier(n_estimators=1000)
 #print(X_train_transformed.shape)
 #print(y_train.shape)
-log_clf.fit(X_train_transformed, y_train)
-yhat = log_clf.predict(X_test_transformed)
+model.fit(X_train_transformed, y_train)
+yhat = model.predict(X_test_transformed)
 print("Balanced accuracy score on the training data = {:.2f}%".format(100 *balanced_accuracy_score(y_test, yhat)))
 
 ###########################################***********################***********##########################
@@ -278,7 +279,7 @@ for name in names_docx_files_test:
 test_zip.close()
 
 X_test_transformed_testset = preprocess_pipeline.transform(doc_text_testset)
-y_pred = log_clf.predict(X_test_transformed_testset)
+y_pred = model.predict(X_test_transformed_testset)
 
 #############################################################################################################
 # Save the predictions with the names of the emails_testset in a new file
