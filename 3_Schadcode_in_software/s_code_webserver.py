@@ -28,10 +28,11 @@ import os
 import re
 import urlextract 
 import nltk
+from datetime import datetime
 #######################################################################
 # Define the variables 
 labels = []
-
+file_names = []
 #######################################################################
 # Extract the text from each document
 
@@ -43,15 +44,18 @@ contents = []
 #print(names)
 url_extractor = urlextract.URLExtract()
 stemmer = nltk.PorterStemmer()
-
+time_now = datetime.now().strftime("%H_%M_%S")
 
 for name in names:
     #print(name)
     tokens = name.split(".")
+    file_names.append(tokens[0])
     labels.append(int(tokens[1]))
 
-labels_temp = labels[:10]
-for i in range(0, 10): #len(names))
+
+index_of_last_file = 10
+labels_temp = labels[:index_of_last_file]
+for i in range(0, index_of_last_file): #len(names)
     content = train_zip.read(names[i]).decode("latin-1")
     urls = list(set(url_extractor.find_urls(content)))
     urls.sort(key=lambda url: len(url), reverse=True)
@@ -105,6 +109,7 @@ print(kmeans.cluster_centers_)
 n_components = 2
 pca = PCA(n_components)
 table = pd.DataFrame()
+table['names'] = file_names[:index_of_last_file]
 table['pred'] = y_pred
 table['label'] = labels_temp
 table['x'] = pca.fit_transform(df)[:, 0]
@@ -115,9 +120,12 @@ print(table)
 np.random.seed(19680801)
 colors = np.random.rand(n_components)
 plt.scatter(table['x'], table['y'],  c = kmeans.labels_.astype(float), alpha=0.5) 
-plt.savefig('foo.png')
+plt.savefig('results/foo' + str(n_clusters) + '_' + time_now + '.png')
 plt.show()
 plt.close()
 
 
-table.to_csv('out.csv')
+table.to_csv('results/out_' + str(n_clusters) + '_' + time_now + '.csv')
+
+
+
