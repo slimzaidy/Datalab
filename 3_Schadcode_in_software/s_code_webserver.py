@@ -20,6 +20,7 @@ from sklearn.metrics import balanced_accuracy_score
 from sklearn.base import TransformerMixin, BaseEstimator
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
+from sklearn.metrics.cluster import adjusted_rand_score
 
 import seedir as sd
 from io import BytesIO
@@ -81,8 +82,8 @@ train_zip.close()
 # print(y_pred)
 ####### Clustering ###########
 
-#df = pd.DataFrame(content_updated.toarray(), columns=vectorizer.get_feature_names())
-#print(df)
+df = pd.DataFrame(content_updated.toarray(), columns=vectorizer.get_feature_names())
+print(df)
 
 n_clusters = 4
 kmeans = KMeans(n_clusters) 
@@ -93,7 +94,6 @@ print(u_labels)
 
 print("Top terms per cluster:")
 order_centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
-print
 terms = vectorizer.get_feature_names()
 for i in range(n_clusters):
     top_ten_words = [terms[ind] for ind in order_centroids[i, :5]]
@@ -102,23 +102,22 @@ print(kmeans.labels_)
 print(kmeans.cluster_centers_)
 
 
-#pca = PCA(n_components=2)
-#table = pd.DataFrame()
-#table['x'] = pca.fit_transform(kmeans.cluster_centers_)[0]
-#table['y'] = pca.fit_transform(kmeans.cluster_centers_)[1]
-#print(table)
+n_components = 2
+pca = PCA(n_components)
+table = pd.DataFrame()
+table['pred'] = y_pred
+table['label'] = labels_temp
+table['x'] = pca.fit_transform(df)[:, 0]
+table['y'] = pca.fit_transform(df)[:, 1]
+table['ARS_score'] = adjusted_rand_score(table['label'].values, table['pred'].values)
+print(table)
+
+np.random.seed(19680801)
+colors = np.random.rand(n_components)
+plt.scatter(table['x'], table['y'],  c = kmeans.labels_.astype(float), alpha=0.5) 
+plt.savefig('foo.png')
+plt.show()
+plt.close()
 
 
-# colormap = {
-#     0: 'red',
-#     1: 'green',
-#     2: 'blue',
-#     3: 'black'
-# }
-# colors = table.apply(lambda row: colormap[row.category], axis=1)
-
-# ax = df.plot(kind='scatter', x=table.x, y=table.y, alpha=0.2, s=200)
-# ax.set_xlabel("Fish")
-# ax.set_ylabel("Penny")
-# plt.show()
-# plt.close()
+table.to_csv('out.csv')
