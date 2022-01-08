@@ -7,3 +7,6 @@
 *.1
 **/test_old/
 **/train_old/
+**.pcap
+**.tar
+**.zip
