@@ -14,4 +14,4 @@ rez.append(complete_string)
 print(rez)
 #print(complete_string)
 
-#for /L %i in (1,1,2) do tshark -r nids-train.pcap -q -z follow,tcp,ascii,%i > strings_train\%i_output.txt
+#for /L %i in (0,1,9999) do tshark -r nids-test.pcap -q -z follow,tcp,ascii,%i > strings_test\%i_output.txt
