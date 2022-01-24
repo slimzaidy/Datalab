@@ -13,7 +13,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import RobustScaler
 from sklearn.mixture import GaussianMixture
 from matplotlib.colors import LogNorm
-
+import csv
 
 def plot_centroids(centroids, weights=None, circle_color='w', cross_color='k'):
     if weights is not None:
@@ -75,7 +75,7 @@ gm.fit(red_dim_data_frame)
 
 
 densities = gm.score_samples(red_dim_data_frame)
-density_threshold = np.percentile(densities, 0.9)   #4
+density_threshold = np.percentile(densities, 0.7)   #0.9
 anomalies = red_dim_data_frame[densities < density_threshold]
 indices_malic = [i for i in range(len(densities)) if densities[i] < density_threshold]
 
@@ -103,4 +103,13 @@ output_df = pd.DataFrame()
 output_df = output_df.append(output_list)
 
 
-output_df.to_csv("5_Netzbasierte_Angriffserkennung/5_output_experiment.csv", header= False)
+#output_df.to_csv("5_Netzbasierte_Angriffserkennung/5_output_experiment.csv", header= False, index = False)
+
+f_csv = open("5_Netzbasierte_Angriffserkennung/output_5.csv", "w+", newline ='')
+writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+
+for name in output_list:
+    x = name 
+    writer.writerow([x])
+
+f_csv.close()
