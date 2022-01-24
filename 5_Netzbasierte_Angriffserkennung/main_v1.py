@@ -1,8 +1,12 @@
+#########################################################################################
+# Datalab
+# Netzbasierte Angriffserkennung
+# Gruppe: Hex Haxors
+# Zaid Askari & Oussama Ben Taarit
+#########################################################################################
+
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.cluster import KMeans
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -52,47 +56,28 @@ def plot_gaussian_mixture(clusterer, X, resolution=1000, show_ylabels=True):
         plt.tick_params(labelleft=False)
 
 #upload the dat file
-path = "5_Netzbasierte_Angriffserkennung\data_train.csv"
+path = "5_Netzbasierte_Angriffserkennung/data_test.csv"
 data = pd.read_csv(path)
 
 data_new = data.rename(columns={data.columns[6]: 'Packets AB', data.columns[7]: 'Bytes AB', data.columns[8]: 'Bytes BA',data.columns[9]: "Bytes/s BA", data.columns[12]: "Bits/s AB", data.columns[13]: "Bits/s BA"})
-#y = np.array(data_new["Address A"]+data_new["Address B"], data_new["Port A"])
 data_new = data_new.drop(columns = data_new.columns[:4])
-#print(data_new.head())
 trafo = RobustScaler()
 data_new = trafo.fit_transform(data_new)
 pca = PCA(0.98)
 pca.fit(data_new)
-#print(pca.explained_variance_ratio_)
 red_dim_data_frame = pca.fit_transform(data_new)
-print(red_dim_data_frame.shape)
-#print(pca.components_)
-
-
-# model = KMeans(n_clusters=3)
-# output = model.fit_predict(red_dim_data_frame) #.reshape(-1,1))
-# centroids = model.cluster_centers_
-# print(centroids)
-# print(set(model.labels_))
-# #plt.scatter(filtered_label2[:,0] , filtered_label2[:,1] , color = 'red')
-# plt.scatter(np.arange(len(output)), output)
-# #plt.scatter(centroids[:,0] , centroids[:,1] , s = 80, color = 'k')
-# plt.show()
-# plt.close()
-
+#print(red_dim_data_frame.shape)
 
 gm = GaussianMixture(n_components=3, n_init=10, random_state=42)
 gm.fit(red_dim_data_frame)
-
-print(gm.weights_)
-
-print(f"{gm.converged_=}")
+#print(gm.weights_)
+#print(f"{gm.converged_=}")
 
 
 densities = gm.score_samples(red_dim_data_frame)
 density_threshold = np.percentile(densities, 0.9)   #4
 anomalies = red_dim_data_frame[densities < density_threshold]
-#anomalies_indices = red_dim_data_frame.indexOf(densities < density_threshold)
+indices_malic = [i for i in range(len(densities)) if densities[i] < density_threshold]
 
 plt.figure(figsize=(8, 4))
 
@@ -101,4 +86,21 @@ plt.scatter(anomalies[:, 0], anomalies[:, 1], color='r', marker='*')
 plt.ylim(top=5.1)
 
 #save_fig("mixture_anomaly_detection_plot")
-plt.show()
+#plt.show()
+#plt.close()
+
+output_list = []
+
+for i in range (0, len(data)): 
+    label = 0
+    if i in indices_malic:
+        label = 1
+    current_row_string = f"{data.loc[i ,'Address A']}:{data.loc[i ,'Port A']}->{data.loc[i ,'Address B']}:{data.loc[i ,'Port B']};{label}"
+    #print(current_row_string)
+    output_list.append(current_row_string)
+
+output_df = pd.DataFrame()
+output_df = output_df.append(output_list)
+
+
+output_df.to_csv("5_Netzbasierte_Angriffserkennung/5_output_experiment.csv", header= False)
