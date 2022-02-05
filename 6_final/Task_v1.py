@@ -50,17 +50,40 @@ def create_model():
     validation_data=y_test,
     epochs=epochs
   )
+
+
+
+
+  x = tf.constant(X_train[:1])
+  y = tf.constant(y_train[:1])
+  loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+  with tf.GradientTape() as tape:
+    tape.watch(x)
+    prediction = model_1(x)
+    loss = loss_fn(prediction, to_categorical(y, 10))
+    # Get the gradients of the loss w.r.t to the input image.
+  perturbations = tape.gradient(loss, x)
+  # Get the sign of the gradients to create the perturbation
+  epsilons = [0, 0.01, 0.1, 0.15]
+  descriptions = [('Epsilon = {:0.3f}'.format(eps) if eps else 'Input')
+                for eps in epsilons]
+
+  for i, eps in enumerate(epsilons):
+    adv_x = x + eps * perturbations
+    adv_x = tf.clip_by_value(adv_x, -1, 1)
+
+
+create_model()
+
 """
 
-
-  """ """
   ------------------------------------------------------------------------------------------------
   """
 
 """
 
- 
- 
+
+
   model_2 = Sequential()
   model_2.add(Dense(256, activation='relu', input_dim=3072))
   model_2.add(Dense(256, activation='relu'))
@@ -94,7 +117,7 @@ def create_model():
   """"""
   Create the  model n3
   """"""
-  
+
   model_3 = Sequential()
 
   model_3.add(Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
@@ -107,31 +130,8 @@ def create_model():
 
   sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
   model_3.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer=sgd)
- 
+
   history = model_3.fit(X_train, y_train, batch_size=32, epochs=15, verbose=2, validation_split=0.2)
- 
-  score = model_3.evaluate(X_test, y_test, batch_size=128, verbose=0)"""
 
-
-
-
-  x = tf.constant(X_train[:1])
-  y = tf.constant(y_train[:1])
-  loss_fn = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-  with tf.GradientTape() as tape:
-    tape.watch(x)
-    prediction = model_1(x)
-    loss = loss_fn(prediction, to_categorical(y, 10))
-    # Get the gradients of the loss w.r.t to the input image.
-  perturbations = tape.gradient(loss, x)
-  # Get the sign of the gradients to create the perturbation
-  epsilons = [0, 0.01, 0.1, 0.15]
-  descriptions = [('Epsilon = {:0.3f}'.format(eps) if eps else 'Input')
-                for eps in epsilons]
-
-  for i, eps in enumerate(epsilons):
-    adv_x = x + eps * perturbations
-    adv_x = tf.clip_by_value(adv_x, -1, 1)
-
-
-create_model()
+  score = model_3.evaluate(X_test, y_test, batch_size=128, verbose=0)
+  """
