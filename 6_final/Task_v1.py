@@ -28,15 +28,16 @@ def create_model():
 
 
   model_1 = Sequential([
-    layers.Rescaling(1./255, input_shape=(32, 32, 3)),
-    layers.Conv2D(16, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(32, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
-    layers.Conv2D(64, 3, padding='same', activation='relu'),
-    layers.MaxPooling2D(),
+    layers.Conv2D(32, (3,3),input_shape=(32, 32, 3), padding='same', activation='relu'),
+    layers.MaxPooling2D(2,2),
+    layers.Conv2D(64, (3,3), padding='same', activation='relu'),
+    layers.MaxPooling2D(2,2),
+    layers.Conv2D(64, (3,3), padding='same', activation='relu'),
+    layers.MaxPooling2D(2,2),
+    layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+    layers.MaxPooling2D(2, 2),
     layers.Flatten(),
-    layers.Dense(128, activation='relu'),
+    layers.Dense(64, activation='relu'),
     layers.Dense(10)
   ])
   model_1.summary()
@@ -46,8 +47,8 @@ def create_model():
   epochs=10
 
   "fit the model"
-  history = model_1.fit(y_train,
-    validation_data=y_test,
+  history = model_1.fit(X_train,y_train,
+    validation_data=(X_test,y_test),
     epochs=epochs
   )
 
