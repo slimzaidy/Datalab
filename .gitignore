@@ -13,9 +13,4 @@
 **.txt
 **.xlsx
 **.gz
-6_Adversarial_Attacks/train/06-blackbox/cifar10.pkl
-6_Adversarial_Attacks/Adversarial_Attacks.py
-6_Adversarial_Attacks/Task_v1.py
-6_final/Task_v1.py
-6_final/Task_v1.py
-6_Adversarial_Attacks/train
+6_Adversarial_Attacks/train/
