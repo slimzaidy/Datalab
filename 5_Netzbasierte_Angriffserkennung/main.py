@@ -104,7 +104,6 @@ output_df = output_df.append(output_list)
 
 
 #output_df.to_csv("5_Netzbasierte_Angriffserkennung/5_output_experiment.csv", header= False, index = False)
-
 f_csv = open("5_Netzbasierte_Angriffserkennung/output_5.csv", "w+", newline ='')
 writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
 
