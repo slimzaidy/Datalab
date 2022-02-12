@@ -13,5 +13,4 @@
 **.txt
 **.xlsx
 **.gz
-6_Adversarial_Attacks/train/*
-6_Adversarial_Attacks\train\*
+**/6_Adversarial_Attacks/train/*
