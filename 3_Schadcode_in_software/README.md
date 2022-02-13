@@ -1,12 +1,4 @@
-Malicious code in DOCX format
 
-In the first task, you should analyze documents in DOCX format and identify malicious code. With this format, each document consists of a series of XML files combined in a zip archive. So the analysis is not difficult. First of all, think about how an attacker can even use malicious code in such a document.
+Web server malicious code
 
-The format for the predictions is as follows:
-
-     data/docx-2017-04/diufgzadsgf.x;1
-     data/docx-2017-04/dsiusdfsdaf.x;0
-     data/docx-2017-04/fzsdhfksafs.x;0
-     data/docx-2017-04/zewrjbakacs.x;0
-     ...
-The first field is the document's filename and the second field is your prediction. In the example, the document diufgzadsgf.x is classified as malicious. 
+In this task you should automatically group malicious code for web servers. These are various bots caught using a honeypot in 2010-2012. They consist of PHP and Perl scripts that can be injected into a web server to control it. Check out some of the bots, it will be easier to develop good features for clustering.
