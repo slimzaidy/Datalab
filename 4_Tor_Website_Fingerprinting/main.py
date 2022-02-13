@@ -21,202 +21,203 @@ import csv
 # https://www.youtube.com/watch?v=VdHEmMXeosU
 
 path = "C:/Users/askar/OneDrive/Dokumente/Meine Dateien/Uni/IST/Datalab/Datalab/4_Tor_Website_Fingerprinting/train_data/"
+path_test = "C:/Users/askar/OneDrive/Dokumente/Meine Dateien/Uni/IST/Datalab/Datalab/4_Tor_Website_Fingerprinting/test_data/"
 
-""" 
-Train _ Create a dataframe of packet count and labels and export csv - 
-Warning!! Takes a long time, you can run it by itself and comment out 
-everything else, then comment it out and work on the rest.
-"""
 dataframe = pd.DataFrame()
 count_list = []
 labels = []
 sent_packets = []
 rcv_packets = []
 avg_packet_length = []
-for file in os.listdir(path):
-    if file.endswith(".pcap"):
-        new_path = os.path.join(path, file)
-        traffic = rdpcap(new_path)
-        label = file.split("_")[0]
-        packet_count = len(traffic)
-        labels.append(label)
-        count_list.append(packet_count)
-        sent = 0
-        rcv = 0
-        packet_lengths_current_file = []
-        for packet in traffic:
+dataframe_test = pd.DataFrame()
+count_list_test = []
+file_names_test = []
+sent_packets_test = []
+rcv_packets_test = []
+avg_packet_length_test = []
+NOMINAL_TRAFO = RobustScaler()
+CAT_TRAFO = OrdinalEncoder()
+MODEL = 0
+
+""" 
+Train _ Create a dataframe of packet count and labels and export csv
+"""
+def load_pcap_train_and_save():
+    for file in os.listdir(path):
+        if file.endswith(".pcap"):
+            new_path = os.path.join(path, file)
+            traffic = rdpcap(new_path)
+            label = file.split("_")[0]
+            packet_count = len(traffic)
+            labels.append(label)
+            count_list.append(packet_count)
+            sent = 0
+            rcv = 0
+            packet_lengths_current_file = []
+            for packet in traffic:
+                
+                try:
+                    src = packet[IP].src
+                    length = packet[IP].len
+                    packet_lengths_current_file.append(length)
+                    if src == "134.169.109.25": 
+                        sent += 1 
+                    else: 
+                        rcv += 1
+                    #print(length)
+                except IndexError as e:
+                    pass
+
+            #print(f'{label}: {sent} : {rcv}')
+            avg_packet_length.append(int(np.mean(packet_lengths_current_file)))
+            sent_packets.append(sent)
+            rcv_packets.append(rcv)
             
-            try:
-                src = packet[IP].src
-                length = packet[IP].len
-                packet_lengths_current_file.append(length)
-                if src == "134.169.109.25": 
-                    sent += 1 
-                else: 
-                    rcv += 1
-                #print(length)
-            except IndexError as e:
-                pass
+    #print(f'len(count_list) and {len(sent_packets)} and {len(rcv_packets)}')
+    dataframe["count"] = count_list
+    dataframe["sent_packets"] = sent_packets
+    dataframe["rcv_packets"] = rcv_packets
+    dataframe["avg_packet_length"] = avg_packet_length
+    dataframe["labels"] = labels
 
-        #print(f'{label}: {sent} : {rcv}')
-        avg_packet_length.append(int(np.mean(packet_lengths_current_file)))
-        sent_packets.append(sent)
-        rcv_packets.append(rcv)
-        
-#print(f'len(count_list) and {len(sent_packets)} and {len(rcv_packets)}')
-dataframe["count"] = count_list
-dataframe["sent_packets"] = sent_packets
-dataframe["rcv_packets"] = rcv_packets
-dataframe["avg_packet_length"] = avg_packet_length
-dataframe["labels"] = labels
-
-print(dataframe)
-dataframe.to_csv("df_1_train_pre.csv")
+    print(dataframe)
+    dataframe.to_csv("df_1_train_pre.csv")
 
 """ Import dataframe and preprocess """
+def preprocess_csv_train_and_save():
+    preprocessed_df = pd.read_csv('df_1_train_pre.csv', index_col=0)
 
-preprocessed_df = pd.read_csv('df_1_train_pre.csv', index_col=0)
+    postprocessed_df = preprocessed_df.copy() #pd.DataFrame()
+    #print(postprocessed_df.columns[:-1])
+    NOMINAL_TRAFO = NOMINAL_TRAFO.fit(postprocessed_df[postprocessed_df.columns[:-1]]) #postprocessed_df[["count"]]
+    CAT_TRAFO = CAT_TRAFO.fit(postprocessed_df[["labels"]])
 
-#print(preprocessed_df)
+    postprocessed_df[postprocessed_df.columns[:-1]] = NOMINAL_TRAFO.transform(postprocessed_df[postprocessed_df.columns[:-1]])
+    postprocessed_df["labels"] = CAT_TRAFO.transform(postprocessed_df[["labels"]])
 
-nominal_trafo = RobustScaler() #MinMaxScaler() #
-cat_trafo = OrdinalEncoder()
+    #print(postprocessed_df)
 
-
-postprocessed_df = preprocessed_df.copy() #pd.DataFrame()
-#print(postprocessed_df.columns[:-1])
-nominal_trafo = nominal_trafo.fit(postprocessed_df[postprocessed_df.columns[:-1]]) #postprocessed_df[["count"]]
-cat_trafo = cat_trafo.fit(postprocessed_df[["labels"]])
-
-postprocessed_df[postprocessed_df.columns[:-1]] = nominal_trafo.transform(postprocessed_df[postprocessed_df.columns[:-1]])
-postprocessed_df["labels"] = cat_trafo.transform(postprocessed_df[["labels"]])
-
-#print(postprocessed_df)
-
-postprocessed_df.to_csv("df_1_train_post.csv")
+    postprocessed_df.to_csv("df_1_train_post.csv")
 
 """ Import df and create model """
+def import_csv_and_create_model():
+    df_to_train = pd.read_csv('df_1_train_post.csv', index_col=0)
 
-df_to_train = pd.read_csv('df_1_train_post.csv', index_col=0)
+    X_train, X_test, y_train, y_test = train_test_split(
+        df_to_train[df_to_train.columns[:-1]],
+        df_to_train["labels"],
+        test_size=0.1,
+        shuffle=True
+    )
 
-#print(df_to_train)
+    #print(type(X_train.values)) # Must be a numpy array
+    #print(type(y_train.values)) # Must be a numpy array
 
-X_train, X_test, y_train, y_test = train_test_split(
-    df_to_train[df_to_train.columns[:-1]],
-    df_to_train["labels"],
-    test_size=0.1,
-    shuffle=True
-)
+    MODEL = RandomForestClassifier()
+    MODEL.fit(X_train.values, y_train.values.ravel())
+    y_hat = MODEL.predict(X_test.values)
 
-print(type(X_train.values)) # Must be a numpy array
-print(type(y_train.values)) # Must be a numpy array
+    accuracy = accuracy_score(y_test.values.ravel(), y_hat)
+    #print(accuracy)
 
-model = RandomForestClassifier()
-model.fit(X_train.values, y_train.values.ravel())
-y_hat = model.predict(X_test.values)
+    df_to_train["labels"] = CAT_TRAFO.inverse_transform(df_to_train[["labels"]])
 
-accuracy = accuracy_score(y_test.values.ravel(), y_hat)
-print(accuracy)
-
-df_to_train["labels"] = cat_trafo.inverse_transform(df_to_train[["labels"]])
-#print(df_to_train)
+    return df_to_train
 
 """ Prediction """
 
 
-path_test = "C:/Users/askar/OneDrive/Dokumente/Meine Dateien/Uni/IST/Datalab/Datalab/4_Tor_Website_Fingerprinting/test_data/"
-
 """ 
-Test _ Create a dataframe of packet count and labels and export csv - 
-Warning!! Takes a long time, you can run it by itself and comment out 
-everything else, then comment it out and work on the rest
+Test _ Create a dataframe of packet count and labels and export csv 
 """
-dataframe = pd.DataFrame()
-count_list = []
-file_names = []
-sent_packets = []
-rcv_packets = []
-avg_packet_length = []
-for file in os.listdir(path_test):
-    if file.endswith(".pcap"):
-        new_path = os.path.join(path_test, file)
-        file_names.append(file)
-        traffic = rdpcap(new_path)
-        packet_count = len(traffic)
-        count_list.append(packet_count)
-        sent = 0
-        rcv = 0
-        packet_lengths_current_file = []
-        for packet in traffic:
+
+def load_pcap_train_and_save():
+    for file in os.listdir(path_test):
+        if file.endswith(".pcap"):
+            new_path = os.path.join(path_test, file)
+            file_names_test.append(file)
+            traffic = rdpcap(new_path)
+            packet_count = len(traffic)
+            count_list_test.append(packet_count)
+            sent = 0
+            rcv = 0
+            packet_lengths_current_file = []
+            for packet in traffic:
+                
+                try:
+                    src = packet[IP].src
+                    length = packet[IP].len
+                    packet_lengths_current_file.append(length)
+                    if src == "134.169.109.25": 
+                        sent += 1 
+                    else: 
+                        rcv += 1
+                    #print(length)
+                except IndexError as e:
+                    pass
+
+            #print(f'{label}: {sent} : {rcv}')
+            avg_packet_length_test.append(int(np.mean(packet_lengths_current_file)))
+            sent_packets_test.append(sent)
+            rcv_packets_test.append(rcv)
             
-            try:
-                src = packet[IP].src
-                length = packet[IP].len
-                packet_lengths_current_file.append(length)
-                if src == "134.169.109.25": 
-                    sent += 1 
-                else: 
-                    rcv += 1
-                #print(length)
-            except IndexError as e:
-                pass
+    #print(f'len(count_list_test) and {len(sent_packets_test)} and {len(rcv_packets_test)}')
+    dataframe_test["count"] = count_list_test
+    dataframe_test["sent_packets"] = sent_packets_test
+    dataframe_test["rcv_packets"] = rcv_packets_test
+    dataframe_test["avg_packet_length"] = avg_packet_length_test
+    #dataframe_test["labels"] = labels
 
-        #print(f'{label}: {sent} : {rcv}')
-        avg_packet_length.append(int(np.mean(packet_lengths_current_file)))
-        sent_packets.append(sent)
-        rcv_packets.append(rcv)
-        
-#print(f'len(count_list) and {len(sent_packets)} and {len(rcv_packets)}')
-dataframe["count"] = count_list
-dataframe["sent_packets"] = sent_packets
-dataframe["rcv_packets"] = rcv_packets
-dataframe["avg_packet_length"] = avg_packet_length
-#dataframe["labels"] = labels
-
-print(dataframe)
-dataframe.to_csv("df_1_test_pre.csv")
+    #print(dataframe_test)
+    dataframe_test.to_csv("df_1_test_pre.csv")
 
 """ Test _ Preprocess """
-
-preprocessed_df = pd.read_csv('df_1_test_pre.csv', index_col=0)
-
-
-postprocessed_df = preprocessed_df.copy() #pd.DataFrame()
-
-postprocessed_df[postprocessed_df.columns[:]] = nominal_trafo.transform(postprocessed_df[postprocessed_df.columns[:]])
+def preprocess_csv_test_pred_save():
+    preprocessed_df = pd.read_csv('df_1_test_pre.csv', index_col=0)
 
 
-postprocessed_df.to_csv("df_1_test_post.csv")
+    postprocessed_df = preprocessed_df.copy() #pd.DataFrame()
 
-""" Test _ Perform prediction """
-
-df_to_predict = pd.read_csv('df_1_test_post.csv', index_col=0)
-
-print(type(df_to_predict))
-
-y_predicted = model.predict(df_to_predict.values)
-
-#print(y_predicted)
-
-df_to_predict["labels"] = cat_trafo.inverse_transform(y_predicted.reshape(-1, 1)) #df_to_predict[["labels"]]
-
-#print(df_to_predict)
+    postprocessed_df[postprocessed_df.columns[:]] = NOMINAL_TRAFO.transform(postprocessed_df[postprocessed_df.columns[:]])
 
 
-""" Save to outout csv file """
+    postprocessed_df.to_csv("df_1_test_post.csv")
 
-file_names = []
-for file in os.listdir(path_test):
-     if file.endswith(".pcap"):
-        file_names.append(file)
+    """ Test _ Perform prediction """
+
+    df_to_predict = pd.read_csv('df_1_test_post.csv', index_col=0)
+
+    print(type(df_to_predict))
+
+    y_predicted = MODEL.predict(df_to_predict.values)
+
+    #print(y_predicted)
+
+    df_to_predict["labels"] = CAT_TRAFO.inverse_transform(y_predicted.reshape(-1, 1)) #df_to_predict[["labels"]]
+
+    #print(df_to_predict)
 
 
-f_csv = open("output_tor.csv", "w+", newline ='')
-writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+    """ Save to outout csv file """
 
-for name, pred in zip(file_names, df_to_predict["labels"]):
-    x = name + ";" + str(pred)
-    writer.writerow([x])
+    file_names = []
+    for file in os.listdir(path_test):
+        if file.endswith(".pcap"):
+            file_names.append(file)
 
-f_csv.close()
 
+    f_csv = open("output_tor.csv", "w+", newline ='')
+    writer = csv.writer(f_csv, quoting=csv.QUOTE_ALL) 
+
+    for name, pred in zip(file_names, df_to_predict["labels"]):
+        x = name + ";" + str(pred)
+        writer.writerow([x])
+
+    f_csv.close()
+
+if __name__ == "__main__":
+    load_pcap_train_and_save()
+    preprocess_csv_train_and_save()
+    import_csv_and_create_model()
+    load_pcap_train_and_save()
+    preprocess_csv_test_pred_save()

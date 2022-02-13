@@ -14,3 +14,6 @@
 **.xlsx
 **.gz
 6_Adversarial_Attacks/06-blackbox/*
+4_Tor_Website_Fingerprinting/helping_functions.py
+4_Tor_Website_Fingerprinting/main_v1
+4_Tor_Website_Fingerprinting/other_tests.py
